@@ -1,15 +1,15 @@
 package org.mymoney.Impl.Enums;
 
 public enum Operation {
-    ALLOCATE ("allocate"),
-    SIP ("sip"),
-    CHANGE ("change"),
-    BALANCE ("balance"),
-    REBALANCE ("rebalance");
+    ALLOCATE ("ALLOCATE"),
+    SIP ("SIP"),
+    CHANGE ("CHANGE"),
+    BALANCE ("BALANCE"),
+    REBALANCE ("REBALANCE");
 
-    public final String label;
+    private final String label;
 
-    private Operation(String label){
+    Operation(String label){
         this.label = label;
     }
 

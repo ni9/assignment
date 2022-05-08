@@ -1,58 +1,130 @@
 package org.mymoney.Impl.Entity;
 
-import org.javatuples.*;
+import org.javatuples.Triplet;
+import org.mymoney.Impl.Enums.Month;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
 
 public class Portfolio {
-    public Double equityBalanceAmount;
-    public Double debtBalanceAmount;
-    public Double goldBalanceAmount;
-    public Double totalBalanceAmount;
-    public InitialInvestmentAmount initialInvestmentAmount = new InitialInvestmentAmount();
+    private Double equityBalanceAmount;
+    private Double debtBalanceAmount;
+    private Double goldBalanceAmount;
+    private Double totalBalanceAmount;
+    private InitialInvestmentAmount initialInvestmentAmount = new InitialInvestmentAmount();
 
-    public MonthlyInvestmentAmount monthlyInvestmentAmount = new MonthlyInvestmentAmount();
+    private MonthlyInvestmentAmount monthlyInvestmentAmount = new MonthlyInvestmentAmount();
 
-    public List<MonthlyChangeRate> monthlyChangeRate = Collections.emptyList();
+    // remove list to one unit at max.
+    private ArrayList<MonthlyChangeRate> monthlyChangeRates = new ArrayList<>();
 
-    public HashMap<String, Triplet<Double, Double, Double>> monthlyBalanceAmount = new HashMap<>();
+    // HM of key, Obj
+    private HashMap<String, Triplet<Double, Double, Double>> monthlyBalanceAmount = new HashMap<>();
 
-    public void initialiseBalanceAmount() {
-        this.equityBalanceAmount = this.initialInvestmentAmount.equityAmount;
-        this.debtBalanceAmount = this.initialInvestmentAmount.debtAmount;
-        this.goldBalanceAmount = this.initialInvestmentAmount.goldAmount;
-        this.totalBalanceAmount = this.initialInvestmentAmount.totalAmount;
+    public Double getEquityBalanceAmount() {
+        return equityBalanceAmount;
+    }
+
+    public void setEquityBalanceAmount(Double equityBalanceAmount) {
+        this.equityBalanceAmount = equityBalanceAmount;
+    }
+
+    public Double getDebtBalanceAmount() {
+        return debtBalanceAmount;
+    }
+
+    public void setDebtBalanceAmount(Double debtBalanceAmount) {
+        this.debtBalanceAmount = debtBalanceAmount;
+    }
+
+    public Double getGoldBalanceAmount() {
+        return goldBalanceAmount;
+    }
+
+    public void setGoldBalanceAmount(Double goldBalanceAmount) {
+        this.goldBalanceAmount = goldBalanceAmount;
+    }
+
+    public Double getTotalBalanceAmount() {
+        return totalBalanceAmount;
+    }
+
+    public void setTotalBalanceAmount(Double totalBalanceAmount) {
+        this.totalBalanceAmount = totalBalanceAmount;
+    }
+
+    public InitialInvestmentAmount getInitialInvestmentAmount() {
+        return initialInvestmentAmount;
+    }
+
+    public void setInitialInvestmentAmount(InitialInvestmentAmount initialInvestmentAmount) {
+        this.initialInvestmentAmount = initialInvestmentAmount;
+    }
+
+    public MonthlyInvestmentAmount getMonthlyInvestmentAmount() {
+        return monthlyInvestmentAmount;
+    }
+
+    public void setMonthlyInvestmentAmount(MonthlyInvestmentAmount monthlyInvestmentAmount) {
+        this.monthlyInvestmentAmount = monthlyInvestmentAmount;
+    }
+
+    public ArrayList<MonthlyChangeRate> getMonthlyChangeRates() {
+        return monthlyChangeRates;
+    }
+
+    public void setMonthlyChangeRates(ArrayList<MonthlyChangeRate> monthlyChangeRates) {
+        this.monthlyChangeRates = monthlyChangeRates;
+    }
+
+    public HashMap<String, Triplet<Double, Double, Double>> getMonthlyBalanceAmount() {
+        return monthlyBalanceAmount;
+    }
+
+    public void setMonthlyBalanceAmount(HashMap<String, Triplet<Double, Double, Double>> monthlyBalanceAmount) {
+        this.monthlyBalanceAmount = monthlyBalanceAmount;
+    }
+
+    public Boolean initialiseBalanceAmount() {
+        this.equityBalanceAmount = this.initialInvestmentAmount.getEquityAmount();
+        this.debtBalanceAmount = this.initialInvestmentAmount.getDebtAmount();
+        this.goldBalanceAmount = this.initialInvestmentAmount.getGoldAmount();
+        this.totalBalanceAmount = this.initialInvestmentAmount.getTotalAmount();
+        return Boolean.TRUE;
     }
 
     public Boolean setMonthBalance(){
 
         // SIP Appended
-        if (this.monthlyChangeRate.size() != 1){
-            this.equityBalanceAmount += this.monthlyInvestmentAmount.equityAmount;
-            this.debtBalanceAmount += this.monthlyInvestmentAmount.debtAmount;
-            this.goldBalanceAmount += this.monthlyInvestmentAmount.goldAmount;
+        if (this.monthlyChangeRates.size() != 1){
+            this.equityBalanceAmount += this.monthlyInvestmentAmount.getEquityAmount();
+            this.debtBalanceAmount += this.monthlyInvestmentAmount.getDebtAmount();
+            this.goldBalanceAmount += this.monthlyInvestmentAmount.getGoldAmount();
         }
 
         // Change Rate Appended.
-        MonthlyChangeRate lastMonthChangeRate = this.monthlyChangeRate.get(this.monthlyChangeRate.size()-1);
-        this.equityBalanceAmount += (this.equityBalanceAmount * lastMonthChangeRate.equityRate)/100;
-        this.debtBalanceAmount += (this.debtBalanceAmount * lastMonthChangeRate.debtRate)/100;
-        this.goldBalanceAmount += (this.goldBalanceAmount * lastMonthChangeRate.goldRate)/100;
+        MonthlyChangeRate lastMonthChangeRate = this.monthlyChangeRates.get(this.monthlyChangeRates.size()-1);
+        this.equityBalanceAmount += (this.equityBalanceAmount * lastMonthChangeRate.getEquityRate())/100;
+        this.debtBalanceAmount += (this.debtBalanceAmount * lastMonthChangeRate.getDebtRate())/100;
+        this.goldBalanceAmount += (this.goldBalanceAmount * lastMonthChangeRate.getGoldRate())/100;
+        this.floorBalanceAmounts();
         this.totalBalanceAmount = this.equityBalanceAmount + this.debtBalanceAmount + this.goldBalanceAmount;
 
-        // rebalancing on 6th and 12th month.
-        if (Objects.equals(lastMonthChangeRate.month, "JUNE") ||
-                Objects.equals(lastMonthChangeRate.month, "DECEMBER")){
-            rebalanceAmount();
+        // re-balancing on 6th and 12th month.
+        if (Month.isReBalancingMonth(lastMonthChangeRate.getMonth())) {
+            this.rebalanceAmount();
         }
 
-        monthlyBalanceAmount.put(lastMonthChangeRate.month,
+        monthlyBalanceAmount.put(lastMonthChangeRate.getMonth(),
                 new Triplet<>(this.equityBalanceAmount, this.debtBalanceAmount, this.goldBalanceAmount));
 
         return Boolean.TRUE;
+    }
+
+    private void floorBalanceAmounts() {
+        this.equityBalanceAmount = Math.floor(this.equityBalanceAmount);
+        this.debtBalanceAmount = Math.floor(this.debtBalanceAmount);
+        this.goldBalanceAmount = Math.floor(this.goldBalanceAmount);
     }
 
     public String getMonthBalance(String currentLine){
@@ -63,18 +135,24 @@ public class Portfolio {
 
         Triplet<Double, Double, Double> monthBalance = this.monthlyBalanceAmount.get(month);
 
-        return monthBalance.getValue0() + " " + monthBalance.getValue1() + " " + monthBalance.getValue2();
+        return String.format("%.0f", monthBalance.getValue0()) + " " +
+                String.format("%.0f", monthBalance.getValue1()) + " " +
+                String.format("%.0f", monthBalance.getValue2());
     }
 
     public String rebalanceAmount(){
 
         this.totalBalanceAmount  = this.equityBalanceAmount + this.debtBalanceAmount + this.goldBalanceAmount;
-        this.equityBalanceAmount = this.totalBalanceAmount  * this.initialInvestmentAmount.equityAmountPercentage / 100;
-        this.debtBalanceAmount   = this.totalBalanceAmount  * this.initialInvestmentAmount.debtAmountPercentage   / 100;
-        this.goldBalanceAmount   = this.totalBalanceAmount  * this.initialInvestmentAmount.goldAmountPercentage   / 100;
+        this.equityBalanceAmount = this.totalBalanceAmount * this.initialInvestmentAmount.getEquityAmountPercentage() / 100;
+        this.debtBalanceAmount   = this.totalBalanceAmount * this.initialInvestmentAmount.getDebtAmountPercentage()   / 100;
+        this.goldBalanceAmount   = this.totalBalanceAmount * this.initialInvestmentAmount.getGoldAmountPercentage()   / 100;
 
+        this.floorBalanceAmounts();
+        this.totalBalanceAmount  = this.equityBalanceAmount + this.debtBalanceAmount + this.goldBalanceAmount;
 
-        return this.equityBalanceAmount + " " + this.debtBalanceAmount + " " + this.goldBalanceAmount;
+        return String.format("%.0f", this.equityBalanceAmount) + " " +
+                String.format("%.0f", this.debtBalanceAmount) + " " +
+                String.format("%.0f", this.goldBalanceAmount);
     }
 
 }
