@@ -7,7 +7,7 @@ import org.mymoney.Impl.Enums.Operation;
 
 public class PortfolioManagement {
 
-    /* Removing extra spaces, and fetching first word as operation. */
+    /* Removing extra spaces, and fetching first word as operation in the form of ENUM. */
     public static Operation evaluateOperation(String currentLine) {
         currentLine = currentLine.trim();
         String[] wordList = currentLine.split("\\s+");
@@ -15,6 +15,9 @@ public class PortfolioManagement {
         return Operation.valueOf(operation);
     }
 
+    /*
+        This function is responsible for keep the Portfolio up-to-date on every operation.
+     */
     public static Portfolio getUpdatedPortfolio(Portfolio portfolio, String currentLine) {
 
         Operation operation = PortfolioManagement.evaluateOperation(currentLine);
@@ -31,7 +34,7 @@ public class PortfolioManagement {
                 break;
 
             case CHANGE:
-                // create entity MonthlyRateChange (SIP Amount)
+                // append MonthlyRateChange for given month.
                 MonthlyChangeRate monthlyChangeRate = new MonthlyChangeRate();
                 monthlyChangeRate.set(currentLine);
                 portfolio.getMonthlyChangeRates().add(monthlyChangeRate);
@@ -39,11 +42,13 @@ public class PortfolioManagement {
                 break;
 
             case BALANCE:
+                // fetch balance of specified month and share it in console.
                 String monthBalance = portfolio.getMonthBalance(currentLine);
                 System.out.println(monthBalance);
                 break;
 
             case REBALANCE:
+                // re-balancing the current funds only during re-balancing months (June, December), using initial allocated funds percentage.
                 MonthlyChangeRate lastMonthChangeRate = portfolio.getMonthlyChangeRates().get(portfolio.getMonthlyChangeRates().size() - 1);
                 String rebalancedAmount;
                 if (Month.isReBalancingMonth(lastMonthChangeRate.getMonth())) {
